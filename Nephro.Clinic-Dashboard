@@ -1,0 +1,124 @@
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
+export default function DecisionSupportDashboard() {
+  const [role, setRole] = useState("");
+  const [issue, setIssue] = useState("");
+  const [result, setResult] = useState(null);
+
+  const exampleResponse = {
+    PCC: {
+      dizziness: {
+        steps: [
+          "Notify the RN immediately — do not wait.",
+          "Record the symptom and any related details in the EHR.",
+          "Ask the patient about other symptoms like chest pain or blurred vision."
+        ],
+        escalateTo: "RN within 5 minutes",
+        document: [
+          "Time patient reported dizziness",
+          "Vital signs if available",
+          "Any communication with RN or APP"
+        ],
+        communicate: [
+          "Let the patient know you’ve notified the nurse.",
+          "Reassure them that help is on the way."
+        ],
+        protocol: "See Clinical Protocol: Intradialytic Symptoms > Dizziness"
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    const symptom = issue.toLowerCase();
+    const match = exampleResponse[role];
+
+    if (!match) {
+      setResult({
+        error: "Role not supported yet. Please choose PCC for this test."
+      });
+      return;
+    }
+
+    if (symptom.includes("dizzy") || symptom.includes("dizziness")) {
+      setResult(match.dizziness);
+    } else {
+      setResult({
+        error: "Sorry, we don't have guidance for this symptom yet. Try describing dizziness."
+      });
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto p-4 space-y-4">
+      <h1 className="text-2xl font-bold">Decision Support Tool</h1>
+      <p className="text-muted-foreground text-sm">
+        Get guidance based on your role and patient symptoms.
+      </p>
+
+      <div className="space-y-2">
+        <Select onValueChange={setRole}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select your role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="PCC">Patient Care Coordinator (PCC)</SelectItem>
+            <SelectItem value="RN">Registered Nurse (RN)</SelectItem>
+            <SelectItem value="APP">Advanced Practice Provider (APP)</SelectItem>
+            <SelectItem value="MD">Medical Doctor (MD)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Input
+          placeholder="Describe the patient issue..."
+          value={issue}
+          onChange={(e) => setIssue(e.target.value)}
+        />
+
+        <Button onClick={handleSubmit}>Get Guidance</Button>
+      </div>
+
+      {result && (
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            {result.error ? (
+              <p className="text-red-500 font-medium">{result.error}</p>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold">What You Should Do</h3>
+                <ul className="list-disc list-inside">
+                  {result.steps.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+
+                <h3 className="text-lg font-semibold">Escalate To</h3>
+                <p>{result.escalateTo}</p>
+
+                <h3 className="text-lg font-semibold">Documentation Required</h3>
+                <ul className="list-disc list-inside">
+                  {result.document.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
+
+                <h3 className="text-lg font-semibold">What to Communicate to Patient</h3>
+                <ul className="list-disc list-inside">
+                  {result.communicate.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+
+                <h3 className="text-lg font-semibold">Reference Protocol</h3>
+                <p>{result.protocol}</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
